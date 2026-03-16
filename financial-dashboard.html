@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial KPI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1e2430;
+    --accent: #00e5a0;
+    --accent2: #ff6b35;
+    --accent3: #4d9fff;
+    --accent4: #c084fc;
+    --text: #e8eaf0;
+    --muted: #5a6275;
+    --positive: #00e5a0;
+    --negative: #ff4d6a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid noise texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,229,160,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-left h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .header-left h1 span {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .header-left p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+
+  /* KPI Cards Row */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: default;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi-card.green::before { background: var(--accent); }
+  .kpi-card.orange::before { background: var(--accent2); }
+  .kpi-card.blue::before { background: var(--accent3); }
+  .kpi-card.purple::before { background: var(--accent4); }
+
+  .kpi-card:hover {
+    border-color: #2a3040;
+    transform: translateY(-2px);
+  }
+
+  .kpi-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .kpi-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .kpi-card.green .kpi-value { color: var(--accent); }
+  .kpi-card.orange .kpi-value { color: var(--accent2); }
+  .kpi-card.blue .kpi-value { color: var(--accent3); }
+  .kpi-card.purple .kpi-value { color: var(--accent4); }
+
+  .kpi-delta {
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .kpi-delta.up { color: var(--positive); }
+  .kpi-delta.down { color: var(--negative); }
+
+  .kpi-sparkline {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    opacity: 0.3;
+  }
+
+  /* Charts grid */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .charts-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 24px;
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .chart-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .chart-badge {
+    font-size: 0.6rem;
+    padding: 3px 8px;
+    border-radius: 1px;
+    letter-spacing: 0.08em;
+  }
+
+  .badge-green { background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+  .badge-orange { background: rgba(255,107,53,0.1); color: var(--accent2); border: 1px solid rgba(255,107,53,0.2); }
+
+  canvas { width: 100% !important; }
+
+  /* Data table */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    padding: 10px 24px;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(30,36,48,0.5);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr:last-child { border-bottom: none; }
+
+  td {
+    padding: 11px 24px;
+    font-size: 0.72rem;
+    color: var(--text);
+  }
+
+  td.positive { color: var(--positive); }
+  td.negative { color: var(--negative); }
+  td.accent { color: var(--accent3); }
+  td.mono { font-family: 'DM Mono', monospace; }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 1px;
+    font-size: 0.6rem;
+  }
+
+  .pill.up { background: rgba(0,229,160,0.1); color: var(--positive); }
+  .pill.down { background: rgba(255,77,106,0.1); color: var(--negative); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .kpi-card, .chart-card, .table-card {
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+  .kpi-card:nth-child(2) { animation-delay: 0.10s; }
+  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+  .kpi-card:nth-child(4) { animation-delay: 0.20s; }
+
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid, .charts-row2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-left">
+      <h1>Financial <span>Performance</span></h1>
+      <p>KPI Monitoring Dashboard · FY 2024</p>
+    </div>
+    <div class="header-right">
+      <div class="live-dot"></div>
+      Last updated: Dec 2024
+    </div>
+  </header>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">$2.84M</div>
+      <div class="kpi-delta up">↑ 18.4% YoY</div>
+      <svg class="kpi-sparkline" width="60" height="28" viewBox="0 0 60 28">
+        <polyline points="0,24 10,20 20,22 30,14 40,10 50,6 60,2" fill="none" stroke="#00e5a0" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Net Profit Margin</div>
+      <div class="kpi-value">28.6%</div>
+      <div class="kpi-delta up">↑ 3.2pp vs prior yr</div>
+      <svg class="kpi-sparkline" width="60" height="28" viewBox="0 0 60 28">
+        <polyline points="0,22 10,20 20,18 30,16 40,12 50,10 60,8" fill="none" stroke="#ff6b35" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Expense Ratio</div>
+      <div class="kpi-value">71.4%</div>
+      <div class="kpi-delta down">↓ 3.2pp improvement</div>
+      <svg class="kpi-sparkline" width="60" height="28" viewBox="0 0 60 28">
+        <polyline points="0,4 10,8 20,6 30,10 40,14 50,16 60,18" fill="none" stroke="#4d9fff" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Marketing ROI</div>
+      <div class="kpi-value">312%</div>
+      <div class="kpi-delta up">↑ 42pp vs last yr</div>
+      <svg class="kpi-sparkline" width="60" height="28" viewBox="0 0 60 28">
+        <polyline points="0,20 10,18 20,14 30,12 40,8 50,6 60,2" fill="none" stroke="#c084fc" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Main Charts -->
+  <div class="charts-grid">
+    <div class="chart-card" style="animation-delay:0.25s">
+      <div class="chart-header">
+        <div class="chart-title">Revenue vs Operating Expenses — Monthly Trend</div>
+        <span class="chart-badge badge-green">2024</span>
+      </div>
+      <canvas id="revenueChart" height="200"></canvas>
+    </div>
+    <div class="chart-card" style="animation-delay:0.30s">
+      <div class="chart-header">
+        <div class="chart-title">Expense Breakdown</div>
+        <span class="chart-badge badge-orange">Q4 2024</span>
+      </div>
+      <canvas id="pieChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="charts-row2">
+    <div class="chart-card" style="animation-delay:0.35s">
+      <div class="chart-header">
+        <div class="chart-title">Net Profit Margin % — Monthly</div>
+      </div>
+      <canvas id="marginChart" height="180"></canvas>
+    </div>
+    <div class="chart-card" style="animation-delay:0.40s">
+      <div class="chart-header">
+        <div class="chart-title">Marketing Spend vs Customer Acquisition</div>
+      </div>
+      <canvas id="marketingChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-card" style="animation-delay:0.45s">
+    <div class="table-header">
+      <div class="chart-title">Monthly Financial Data</div>
+      <span class="chart-badge badge-green">12 Records</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Revenue</th>
+          <th>Op. Expenses</th>
+          <th>Net Profit</th>
+          <th>Profit Margin</th>
+          <th>Mktg Spend</th>
+          <th>Customers Acq.</th>
+          <th>Mktg ROI</th>
+          <th>Growth MoM</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const data = {
+  revenue:     [195000, 210000, 198000, 225000, 240000, 232000, 258000, 265000, 248000, 275000, 290000, 205000],
+  opex:        [148000, 155000, 145000, 160000, 168000, 162000, 178000, 180000, 170000, 188000, 196000, 142000],
+  netProfit:   [47000,  55000,  53000,  65000,  72000,  70000,  80000,  85000,  78000,  87000,  94000,  63000],
+  mktgSpend:   [22000,  24000,  21000,  26000,  28000,  27000,  30000,  31000,  29000,  33000,  35000,  24000],
+  custAcq:     [380,    420,    395,    480,    510,    495,    560,    590,    540,    620,    670,    450],
+};
+
+const fmt = (n) => '$' + (n >= 1000000 ? (n/1000000).toFixed(1)+'M' : (n/1000).toFixed(0)+'K');
+const pct = (a,b) => ((a/b)*100).toFixed(1) + '%';
+const roi = (rev, spend) => (((rev - spend) / spend) * 100).toFixed(0) + '%';
+
+// Build table
+const tbody = document.getElementById('tableBody');
+data.revenue.forEach((rev, i) => {
+  const margin = (data.netProfit[i]/rev*100).toFixed(1);
+  const growth = i === 0 ? '—' : (((rev - data.revenue[i-1])/data.revenue[i-1])*100).toFixed(1) + '%';
+  const mROI = (((rev*0.4 - data.mktgSpend[i])/data.mktgSpend[i])*100).toFixed(0) + '%';
+  const growthClass = i > 0 ? (rev >= data.revenue[i-1] ? 'up' : 'down') : '';
+  tbody.innerHTML += `
+    <tr>
+      <td>${months[i]} 2024</td>
+      <td class="mono positive">${fmt(rev)}</td>
+      <td class="mono">${fmt(data.opex[i])}</td>
+      <td class="mono positive">${fmt(data.netProfit[i])}</td>
+      <td>${margin}%</td>
+      <td class="mono">${fmt(data.mktgSpend[i])}</td>
+      <td class="accent">${data.custAcq[i].toLocaleString()}</td>
+      <td class="positive">${mROI}</td>
+      <td>${i === 0 ? '—' : `<span class="pill ${growthClass}">${growth}</span>`}</td>
+    </tr>`;
+});
+
+// Chart defaults
+Chart.defaults.color = '#5a6275';
+Chart.defaults.borderColor = '#1e2430';
+Chart.defaults.font.family = 'DM Mono, monospace';
+Chart.defaults.font.size = 10;
+
+// Revenue vs OpEx Chart
+new Chart(document.getElementById('revenueChart'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      {
+        label: 'Revenue',
+        data: data.revenue,
+        borderColor: '#00e5a0',
+        backgroundColor: 'rgba(0,229,160,0.06)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: '#00e5a0',
+      },
+      {
+        label: 'Operating Expenses',
+        data: data.opex,
+        borderColor: '#ff6b35',
+        backgroundColor: 'rgba(255,107,53,0.06)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: '#ff6b35',
+      },
+      {
+        label: 'Net Profit',
+        data: data.netProfit,
+        borderColor: '#4d9fff',
+        borderWidth: 1.5,
+        borderDash: [4,3],
+        fill: false,
+        tension: 0.4,
+        pointRadius: 2,
+        pointBackgroundColor: '#4d9fff',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { boxWidth: 10, padding: 16, font: { size: 10 } } },
+      tooltip: {
+        backgroundColor: '#181c24',
+        borderColor: '#1e2430',
+        borderWidth: 1,
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` }
+      }
+    },
+    scales: {
+      x: { grid: { color: '#1a1f2a' } },
+      y: {
+        grid: { color: '#1a1f2a' },
+        ticks: { callback: v => '$' + (v/1000) + 'K' }
+      }
+    }
+  }
+});
+
+// Pie chart
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Operating Costs', 'Marketing Spend', 'Net Profit', 'Other Expenses'],
+    datasets: [{
+      data: [42, 12, 28, 18],
+      backgroundColor: ['#ff6b35', '#c084fc', '#00e5a0', '#4d9fff'],
+      borderColor: '#111318',
+      borderWidth: 3,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 14, boxWidth: 10 } },
+      tooltip: { backgroundColor: '#181c24', borderColor: '#1e2430', borderWidth: 1 }
+    }
+  }
+});
+
+// Profit margin line
+const margins = data.revenue.map((r, i) => (data.netProfit[i]/r*100).toFixed(1));
+new Chart(document.getElementById('marginChart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [{
+      label: 'Profit Margin %',
+      data: margins,
+      backgroundColor: margins.map(m => m > 28 ? 'rgba(0,229,160,0.6)' : 'rgba(0,229,160,0.25)'),
+      borderColor: '#00e5a0',
+      borderWidth: 1,
+      borderRadius: 1,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: '#181c24', borderColor: '#1e2430', borderWidth: 1, callbacks: { label: ctx => ` Margin: ${ctx.parsed.y}%` } }
+    },
+    scales: {
+      x: { grid: { color: '#1a1f2a' } },
+      y: { grid: { color: '#1a1f2a' }, ticks: { callback: v => v + '%' }, min: 20 }
+    }
+  }
+});
+
+// Marketing ROI
+new Chart(document.getElementById('marketingChart'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      {
+        label: 'Marketing Spend',
+        data: data.mktgSpend,
+        borderColor: '#c084fc',
+        backgroundColor: 'rgba(192,132,252,0.08)',
+        fill: true,
+        borderWidth: 2,
+        tension: 0.4,
+        pointRadius: 3,
+        yAxisID: 'y',
+      },
+      {
+        label: 'Customers Acquired',
+        data: data.custAcq,
+        borderColor: '#4d9fff',
+        borderWidth: 2,
+        tension: 0.4,
+        pointRadius: 3,
+        fill: false,
+        yAxisID: 'y1',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { boxWidth: 10, padding: 16, font: { size: 10 } } },
+      tooltip: { backgroundColor: '#181c24', borderColor: '#1e2430', borderWidth: 1 }
+    },
+    scales: {
+      x: { grid: { color: '#1a1f2a' } },
+      y: {
+        type: 'linear', position: 'left',
+        grid: { color: '#1a1f2a' },
+        ticks: { callback: v => '$' + (v/1000) + 'K' }
+      },
+      y1: {
+        type: 'linear', position: 'right',
+        grid: { drawOnChartArea: false },
+        ticks: { callback: v => v }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
