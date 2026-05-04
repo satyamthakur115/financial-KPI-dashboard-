@@ -132,5 +132,5 @@ The automated report includes:
 ## 👤 Author
 
 **Satyam Thakur** — Data Analyst | Database Administrator  
-📧 satyamthakur115@gmail.com | [LinkedIn](https://linkedin.com/in/satyam-thakur) | [GitHub](https://github.com/satyamthakur115)
+📧 satyamthakur115@gmail.com | [LinkedIn](https://www.linkedin.com/in/satyam-thakur-94a4231b9/) | [GitHub](https://github.com/satyamthakur115)
 
