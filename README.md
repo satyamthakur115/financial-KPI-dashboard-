@@ -129,6 +129,14 @@ The automated report includes:
 
 ---
 
+### 📸 Dashboard Preview
+
+> 📌 Below is a snapshot of the Power BI dashboard and automated Excel report generated from the end-to-end pipeline.
+
+<img width="1536" height="1024" alt="May 5, 2026, 11_17_58 PM" src="https://github.com/user-attachments/assets/8a8645ac-38c7-45ba-bee5-d65c213eec37" />
+
+---
+
 ## 🔍 Key SQL Techniques Used
 
 - **CTEs** for multi-step KPI calculations
