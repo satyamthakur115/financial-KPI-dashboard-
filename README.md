@@ -22,6 +22,16 @@ This project simulates a real-world financial analytics workflow for a mid-sized
 
 ---
 
+## 📊 Key Findings**
+- Identified 12% cost reduction opportunity by analyzing department-level budget variance, with the largest overspending in operations and logistics
+- Discovered declining gross margin trend (−4.2%) over 6 months, driven by rising COGS without proportional revenue growth
+- Found that top 20% of products contributed ~65% of total revenue, highlighting strong product concentration risk
+- Detected seasonal revenue patterns, with peak performance in Q4 and consistent dips in Q2
+- Revealed high expense ratio (>78%) in underperforming departments, indicating inefficiency and potential restructuring areas
+- Automated reporting reduced manual effort by ~95% (3 hours → under 10 minutes), enabling faster decision-making
+
+---
+
 ## 🗂️ Project Structure
 
 ```
