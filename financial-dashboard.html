@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Financial KPI Dashboard — Satyam Thakur</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #0d1117;
+    --bg2:      #161b22;
+    --bg3:      #21262d;
+    --border:   rgba(240,246,252,0.08);
+    --border2:  rgba(240,246,252,0.15);
+    --text:     #e6edf3;
+    --text2:    #8b949e;
+    --text3:    #484f58;
+    --green:    #1D9E75;
+    --green2:   #5DCAA5;
+    --blue:     #378ADD;
+    --blue2:    #85B7EB;
+    --purple:   #534AB7;
+    --amber:    #EF9F27;
+    --coral:    #D85A30;
+    --red:      #CF4444;
+    --mono:     'JetBrains Mono', monospace;
+    --sans:     'Inter', sans-serif;
+    --r:        10px;
+    --r-sm:     6px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
+  .page { max-width: 1140px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  /* HEADER */
+  .header { border-bottom: 0.5px solid var(--border2); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.75rem; }
+  .tag { font-family: var(--mono); font-size: 11px; color: var(--green); letter-spacing: 0.08em; margin-bottom: 6px; }
+  h1 { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: var(--text2); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .badge { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; border: 0.5px solid var(--border2); color: var(--text2); }
+  .badge.g { background: rgba(29,158,117,0.12); color: var(--green2); border-color: rgba(29,158,117,0.3); }
+  .badge.b { background: rgba(55,138,221,0.12); color: var(--blue2); border-color: rgba(55,138,221,0.3); }
+  .badge.p { background: rgba(83,74,183,0.12); color: #AFA9EC; border-color: rgba(83,74,183,0.3); }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pill { font-family: var(--mono); font-size: 10px; color: var(--text3); background: var(--bg3); border: 0.5px solid var(--border); border-radius: 4px; padding: 2px 8px; }
+
+  /* STAT ROW */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .stat { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--r-sm); padding: 14px 16px; position: relative; overflow: hidden; }
+  .stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: var(--r-sm) var(--r-sm) 0 0; }
+  .stat.s-green::before { background: var(--green); }
+  .stat.s-blue::before  { background: var(--blue); }
+  .stat.s-purple::before { background: var(--purple); }
+  .stat.s-amber::before { background: var(--amber); }
+  .stat-val { font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.2; }
+  .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 4px; font-family: var(--mono); letter-spacing: 0.04em; }
+  .stat-delta { font-family: var(--mono); font-size: 10px; margin-top: 6px; }
+  .up { color: var(--green2); }
+  .dn { color: var(--coral); }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+  .grid-13 { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; margin-bottom: 14px; }
+
+  /* CARD */
+  .card { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--r); padding: 16px 18px; }
+  .card-title { font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; border-radius: 2px; background: var(--green); flex-shrink: 0; }
+  .card-title.b::before { background: var(--blue); }
+  .card-title.p::before { background: var(--purple); }
+  .card-title.a::before { background: var(--amber); }
+  .card-title.r::before { background: var(--coral); }
+
+  /* LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-family: var(--mono); font-size: 10px; color: var(--text2); }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* INSIGHT STRIP */
+  .insight-bar { background: rgba(29,158,117,0.06); border: 0.5px solid rgba(29,158,117,0.18); border-radius: var(--r-sm); padding: 12px 16px; margin-bottom: 1.5rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .insight { display: flex; flex-direction: column; gap: 2px; }
+  .insight-label { font-family: var(--mono); font-size: 10px; color: var(--green2); letter-spacing: 0.06em; }
+  .insight-val { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text); }
+
+  /* BUDGET TABLE */
+  .budget-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+  .budget-table th { color: var(--text3); font-weight: 500; text-align: left; padding: 6px 10px; border-bottom: 0.5px solid var(--border); letter-spacing: 0.06em; font-size: 10px; }
+  .budget-table td { padding: 8px 10px; border-bottom: 0.5px solid var(--border); color: var(--text2); }
+  .budget-table tr:last-child td { border-bottom: none; }
+  .budget-table .dept-name { color: var(--text); font-weight: 500; }
+  .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+  .on-track { background: var(--green); }
+  .over { background: var(--coral); }
+  .slight { background: var(--amber); }
+  .bar-bg { background: var(--bg3); border-radius: 3px; height: 5px; margin-top: 4px; }
+  .bar-fill { height: 5px; border-radius: 3px; }
+
+  /* FOOTER */
+  .footer { border-top: 0.5px solid var(--border); padding-top: 1.25rem; margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 20px; font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+  @media (max-width: 750px) {
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .grid-2, .grid-3, .grid-13 { grid-template-columns: 1fr; }
+    .insight-bar { grid-template-columns: 1fr 1fr; }
+    h1 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-top">
+      <div>
+        <div class="tag">// financial kpi dashboard</div>
+        <h1>Financial KPI Dashboard</h1>
+        <p class="sub">2,000 transactions · 5 departments · 2023–2024 fiscal years</p>
+      </div>
+      <div class="badges">
+        <span class="badge g">MySQL</span>
+        <span class="badge b">Python</span>
+        <span class="badge p">2,000 tx</span>
+      </div>
+    </div>
+    <div class="pills">
+      <span class="pill">Revenue Tracking</span>
+      <span class="pill">Gross Margin</span>
+      <span class="pill">MoM Growth</span>
+      <span class="pill">Budget vs Actual</span>
+      <span class="pill">YoY Comparison</span>
+      <span class="pill">Dept Expense Ratio</span>
+    </div>
+  </header>
+
+  <!-- KPI STATS -->
+  <div class="stat-row">
+    <div class="stat s-green">
+      <div class="stat-val">$9.75M</div>
+      <div class="stat-lbl">total revenue</div>
+      <div class="stat-delta up">↑ 9.3% YoY</div>
+    </div>
+    <div class="stat s-blue">
+      <div class="stat-val">$4.79M</div>
+      <div class="stat-lbl">net profit</div>
+      <div class="stat-delta up">49.1% margin</div>
+    </div>
+    <div class="stat s-purple">
+      <div class="stat-val">90.7%</div>
+      <div class="stat-lbl">gross margin</div>
+      <div class="stat-delta up">↑ strong</div>
+    </div>
+    <div class="stat s-amber">
+      <div class="stat-val">$4.05M</div>
+      <div class="stat-lbl">total expenses</div>
+      <div class="stat-delta dn">5 departments</div>
+    </div>
+  </div>
+
+  <!-- INSIGHT STRIP -->
+  <div class="insight-bar">
+    <div class="insight">
+      <span class="insight-label">// 2023 revenue</span>
+      <span class="insight-val">$4.66M</span>
+    </div>
+    <div class="insight">
+      <span class="insight-label">// 2024 revenue</span>
+      <span class="insight-val">$5.09M</span>
+    </div>
+    <div class="insight">
+      <span class="insight-label">// yoy growth</span>
+      <span class="insight-val">+9.3%</span>
+    </div>
+    <div class="insight">
+      <span class="insight-label">// transactions</span>
+      <span class="insight-val">2,000 records</span>
+    </div>
+  </div>
+
+  <!-- ROW 1: Revenue + Gross Margin -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">monthly revenue vs expenses</div>
+      <div class="legend">
+        <span><span class="dot" style="background:#1D9E75"></span>Revenue</span>
+        <span><span class="dot" style="background:#D85A30"></span>Expenses</span>
+        <span><span class="dot" style="background:#888780"></span>COGS</span>
+      </div>
+      <div style="position:relative;height:240px;">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title b">gross margin % by month</div>
+      <div style="position:relative;height:260px;">
+        <canvas id="marginChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Net Profit + Dept Expenses -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title p">net profit trend</div>
+      <div class="legend">
+        <span><span class="dot" style="background:#534AB7"></span>Net Profit</span>
+        <span><span class="dot" style="background:rgba(83,74,183,0.2)"></span>Breakeven</span>
+      </div>
+      <div style="position:relative;height:240px;">
+        <canvas id="netProfitChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title a">expense ratio by department</div>
+      <div style="position:relative;height:240px;">
+        <canvas id="deptChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Budget vs Actual + YoY -->
+  <div class="grid-13">
+    <div class="card">
+      <div class="card-title b">yoy revenue</div>
+      <div style="position:relative;height:220px;">
+        <canvas id="yoyChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title r">budget vs actual — by department</div>
+      <table class="budget-table">
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Actual</th>
+            <th>Budget</th>
+            <th>Variance</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="budgetBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span>transactions: 2,000 records &nbsp;|&nbsp; fiscal: 2023–2024</span>
+    <span>stack: MySQL · Python · Pandas</span>
+    <span>author: Satyam Thakur</span>
+  </footer>
+</div>
+
+<script>
+const textColor = '#8b949e';
+const gridColor = 'rgba(240,246,252,0.06)';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 11;
+
+const months = ["Jan '23","Feb '23","Mar '23","Apr '23","May '23","Jun '23","Jul '23","Aug '23","Sep '23","Oct '23","Nov '23","Dec '23","Jan '24","Feb '24","Mar '24","Apr '24","May '24","Jun '24","Jul '24","Aug '24","Sep '24","Oct '24","Nov '24","Dec '24"];
+const rev =  [367313,312493,321601,407182,464497,340447,359813,466993,340352,508417,384608,382221,394335,492425,407481,428194,442355,247775,379075,446585,296504,470987,609983,474109];
+const exp =  [150456,117259,216247,143830,142377,167487,161032,143779,156019,223448,164217,146083,174551,171095,154573,175091,170690,173455,212352,150954,190793,192323,130898,221950];
+const cogs = [37264,55180,31273,30044,29885,49267,28214,62525,36914,21405,43702,22507,40493,48448,27255,48955,51058,41529,36969,19586,55442,33644,34065,20404];
+const gm =   [89.9,82.3,90.3,92.6,93.6,85.5,92.2,86.6,89.2,95.8,88.6,94.1,89.7,90.2,93.3,88.6,88.5,83.2,90.2,95.6,81.3,92.9,94.4,95.7];
+const net =  [179593,140054,74081,233308,292235,123693,170567,260689,147419,263564,176689,213631,179291,272882,225653,204148,220607,32791,129754,276045,50269,245020,445020,231755];
+
+const tip = { backgroundColor:'#21262d', titleColor:'#e6edf3', bodyColor:'#8b949e', borderColor:'rgba(240,246,252,0.1)', borderWidth:1 };
+
+// Revenue chart
+new Chart(document.getElementById('revenueChart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Revenue', data: rev, backgroundColor: 'rgba(29,158,117,0.7)', borderRadius: 3, borderSkipped: false },
+      { label: 'Expenses', data: exp, backgroundColor: 'rgba(216,90,48,0.6)', borderRadius: 3, borderSkipped: false },
+      { label: 'COGS', data: cogs, backgroundColor: 'rgba(136,135,128,0.5)', borderRadius: 3, borderSkipped: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 45, autoSkip: true, maxTicksLimit: 12 } },
+      y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => '$' + (v/1000).toFixed(0) + 'K' } }
+    }
+  }
+});
+
+// Gross Margin
+new Chart(document.getElementById('marginChart'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [{
+      label: 'Gross Margin %',
+      data: gm,
+      borderColor: '#378ADD',
+      backgroundColor: 'rgba(55,138,221,0.08)',
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: '#378ADD',
+      fill: true,
+      tension: 0.4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: ctx => ` Gross Margin: ${ctx.parsed.y}%` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 45, autoSkip: true, maxTicksLimit: 12 } },
+      y: { min: 70, max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: v => v + '%' } }
+    }
+  }
+});
+
+// Net Profit
+new Chart(document.getElementById('netProfitChart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [{
+      label: 'Net Profit',
+      data: net,
+      backgroundColor: net.map(v => v >= 0 ? 'rgba(83,74,183,0.75)' : 'rgba(207,68,68,0.7)'),
+      borderRadius: 3, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: ctx => ` Net Profit: $${ctx.parsed.y.toLocaleString()}` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 45, autoSkip: true, maxTicksLimit: 12 } },
+      y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => '$' + (v/1000).toFixed(0) + 'K' } }
+    }
+  }
+});
+
+// Dept Expense
+const depts = ['Sales','Operations','Marketing','Finance','IT'];
+const deptExp = [1034690, 1039114, 923532, 1011981, 947671];
+new Chart(document.getElementById('deptChart'), {
+  type: 'bar',
+  data: {
+    labels: depts,
+    datasets: [{
+      label: 'Expenses',
+      data: deptExp,
+      backgroundColor: ['#1D9E75','#378ADD','#534AB7','#EF9F27','#D85A30'],
+      borderRadius: 4, borderSkipped: false
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: ctx => ` $${ctx.parsed.x.toLocaleString()}` } } },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => '$' + (v/1000).toFixed(0) + 'K' } },
+      y: { grid: { display: false }, ticks: { color: textColor } }
+    }
+  }
+});
+
+// YoY
+new Chart(document.getElementById('yoyChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2023', '2024'],
+    datasets: [{
+      data: [4655939, 5089808],
+      backgroundColor: ['rgba(55,138,221,0.5)', '#1D9E75'],
+      borderRadius: 5, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { ...tip, callbacks: { label: ctx => ` $${ctx.parsed.y.toLocaleString()}` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: textColor } },
+      y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => '$' + (v/1000000).toFixed(1) + 'M' } }
+    }
+  }
+});
+
+// Budget table
+const budgetData = [
+  { dept: 'Sales',      actual: 1034690, budget: 1089070 },
+  { dept: 'Operations', actual: 1039114, budget: 1125523 },
+  { dept: 'Marketing',  actual: 923532,  budget: 995413  },
+  { dept: 'Finance',    actual: 1011981, budget: 885272  },
+  { dept: 'IT',         actual: 947671,  budget: 1194854 },
+];
+
+const tbody = document.getElementById('budgetBody');
+budgetData.forEach(row => {
+  const variance = row.actual - row.budget;
+  const pct = ((row.actual / row.budget) * 100).toFixed(1);
+  const over = row.actual > row.budget * 1.1;
+  const slight = row.actual > row.budget && !over;
+  const status = over ? 'Over Budget' : slight ? 'Slightly Over' : 'On Track';
+  const dotClass = over ? 'over' : slight ? 'slight' : 'on-track';
+  const fillColor = over ? '#CF4444' : slight ? '#EF9F27' : '#1D9E75';
+  const fillPct = Math.min(100, parseFloat(pct));
+
+  tbody.innerHTML += `
+    <tr>
+      <td class="dept-name">${row.dept}</td>
+      <td>$${(row.actual/1000).toFixed(0)}K</td>
+      <td>$${(row.budget/1000).toFixed(0)}K</td>
+      <td style="color:${variance>0?'#CF4444':'#1D9E75'}">${variance>0?'+':''}$${(variance/1000).toFixed(0)}K</td>
+      <td>
+        <span class="status-dot ${dotClass}"></span>${status}
+        <div class="bar-bg"><div class="bar-fill" style="width:${fillPct}%;background:${fillColor}"></div></div>
+      </td>
+    </tr>`;
+});
+</script>
+</body>
+</html>
